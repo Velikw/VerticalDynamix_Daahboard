@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import pyodbc
+# import pyodbc
 
 
 st.write('dddddd')
