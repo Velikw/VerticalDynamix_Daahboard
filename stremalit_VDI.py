@@ -4,38 +4,17 @@ import pandas as pd
 import altair as alt
 import pyodbc
 
-# Replace these values with your actual database connection details
 server = 'verticaldynamix.database.windows.net'
 database = 'VerticalDynamix'
 username = 'VerticalDynamix'
 password = 'Golemw#153'
-driver = 'ODBC Driver 17 for SQL Server'
+driver = '{ODBC Driver 17 for SQL Server}'
+connection_string = f"Driver={driver};Server={server};Database={database};Uid={username};Pwd={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
 
-# Insert custom CSS to modify the appearance of date input elements
-
-
-# server = 'verticaldynamix.database.windows.net'
-# database = 'VerticalDynamix'
-# username = 'VerticalDynamix'
-# password = 'Golemw#153'
-# driver = '{ODBC Driver 17 for SQL Server}'
-
-# Create a connection string (using SQLAlchemy)
-connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
-connection = pyodbc.connect(
-        f'DRIVER={{{driver}}};'
-        f'SERVER={server};'
-        f'DATABASE={database};'
-        f'UID={username};'
-        f'PWD={password}'
-    )
-
-# Create a database engine
 try:
-    # engine = create_engine(connection_string)
+    conn = pyodbc.connect(connection_string)
     st.success("Connected to the database successfully!")
 
-    # Title of the app
     st.title("TB Units Per Day Report")
 
     st.markdown(
@@ -56,18 +35,37 @@ try:
     from_date = st.date_input("Select From Date")
     to_date = st.date_input("Select To Date")
 
+    from_date = from_date.strftime('%Y-%m-%d')
+    to_date = to_date.strftime('%Y-%m-%d')
+
     if from_date and to_date:
         if from_date > to_date:
             st.error("From date must be before To date.")
         else:
-            query = f"""
+            sql_query = '''
             SELECT LCP_name, TB_units, startDate, UserName
             FROM DataTimeBucketPB
-            WHERE startDate BETWEEN '{from_date}' AND '{to_date}'
-            """
+            WHERE startDate BETWEEN ? AND ?
+            
+            '''
+            df = pd.read_sql(sql_query, conn, params=(from_date, to_date))
         
-            # Execute the query and load data into a DataFrame
-            df = pd.read_sql_query(query, connection)
+            # Close the connection
+            conn.close()
+
+            # # Execute the query and fetch data
+            # cursor = conn.cursor()
+            # cursor.execute(sql_query, (from_date, to_date))
+            # data = cursor.fetchall()
+
+            # columns = ['LCP_name', 'TB_units', 'startDate', 'UserName']
+            # df = pd.DataFrame(data, columns=columns)
+
+            
+            # st.write(df)
+            # df = pd.DataFrame(data, columns=['LCP_name', 'TB_units', 'startDate', 'UserName'])
+            # # df = pd.DataFrame(data)
+            # st.write(df)
 
             if not df.empty:
                 df['startDate'] = pd.to_datetime(df['startDate'])
