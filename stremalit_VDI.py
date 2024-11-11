@@ -144,6 +144,6 @@ try:
                     st.altair_chart(layered_chartLCP, use_container_width=True)
             else:
                 st.warning("No data found for the selected date range.")
-
+# nova promena
 except Exception as e:
     st.error(f"An error occurred: {e}")
