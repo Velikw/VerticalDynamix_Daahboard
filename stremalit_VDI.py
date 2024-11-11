@@ -1,13 +1,15 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
 import altair as alt
+import pyodbc
 
 # Replace these values with your actual database connection details
 server = 'verticaldynamix.database.windows.net'
 database = 'VerticalDynamix'
 username = 'VerticalDynamix'
 password = 'Golemw#153'
+driver = 'ODBC Driver 17 for SQL Server'
 
 # Insert custom CSS to modify the appearance of date input elements
 
@@ -20,10 +22,17 @@ password = 'Golemw#153'
 
 # Create a connection string (using SQLAlchemy)
 connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+connection = pyodbc.connect(
+        f'DRIVER={{{driver}}};'
+        f'SERVER={server};'
+        f'DATABASE={database};'
+        f'UID={username};'
+        f'PWD={password}'
+    )
 
 # Create a database engine
 try:
-    engine = create_engine(connection_string)
+    # engine = create_engine(connection_string)
     st.success("Connected to the database successfully!")
 
     # Title of the app
@@ -52,12 +61,13 @@ try:
             st.error("From date must be before To date.")
         else:
             query = f"""
-                SELECT LCP_name, TB_units, startDate, UserName
-                FROM DataTimeBucketPB
-                WHERE startDate BETWEEN '{from_date}' AND '{to_date}'
+            SELECT LCP_name, TB_units, startDate, UserName
+            FROM DataTimeBucketPB
+            WHERE startDate BETWEEN '{from_date}' AND '{to_date}'
             """
-
-            df = pd.read_sql_query(query, engine)
+        
+            # Execute the query and load data into a DataFrame
+            df = pd.read_sql_query(query, connection)
 
             if not df.empty:
                 df['startDate'] = pd.to_datetime(df['startDate'])
@@ -85,7 +95,7 @@ try:
                     .properties(width=700, height=400)  # Adjust chart dimensions
                 )
 
-                # Add text labels on top of the bars
+               
                 text = base_chartLCP.mark_text(
                     align='left',
                     baseline='middle',
